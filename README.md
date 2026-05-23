@@ -29,3 +29,22 @@ Smartverse_app/
 │   └── index.html        # One-touch accessible frontend test frame
 ├── app.py                # Main backend server application routing engine
 └── .gitignore            # Version control filters
+# ⚙️ Quickstart Installation & Local Setup
+
+# 1. Clone the Repository & Navigate
+git clone https://github.com/DragonFly-Forge/Smartverse_hackathon_app_V0.2.git
+cd Smartverse_app
+
+# 2. Initialize and Activate Virtual Environment (Windows PowerShell)
+python -m venv venv
+.\venv\Scripts\activate
+
+# 3. Install Package Requirements
+pip install flask google-genai
+
+# 4. Inject Google AI Studio API Secret
+# (Generate a free credential key from https://aistudio.google.com/)
+$env:GEMINI_API_KEY="your_actual_copied_api_key_here"
+
+# 5. Fire Up the Server Engine
+python app.py
