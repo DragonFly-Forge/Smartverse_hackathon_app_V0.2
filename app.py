@@ -64,7 +64,7 @@ def process_scene():
         print(f"\n[AI RUN] Forwarding payload to Gemini: '{user_query}'...")
         
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash',
             contents=[image_part, f"User Query: {user_query}"],
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction
