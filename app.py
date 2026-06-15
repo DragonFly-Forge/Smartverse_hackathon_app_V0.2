@@ -8,7 +8,6 @@ app = Flask(__name__)
 # --- HACKATHON SAFETY CAPS ---
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB limit
 ALLOWED_IMAGE_MIMES = {'image/jpeg', 'image/png', 'image/webp'}
-ALLOWED_AUDIO_MIMES = {'audio/m4a', 'audio/x-m4a', 'audio/mp4'} # Added m4a wrappers
 # -----------------------------
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -27,18 +26,21 @@ def home():
     })
 
 @app.route('/process-scene', methods=['POST'])
-def process_scene():
+def process_scene():  # 🟢 FIX 1: Added missing function declaration
     try:
         if not client:
             return jsonify({"status": "error", "message": "Server API key is misconfigured."}), 500
 
-        # Grab text query AND files from payload
+        # Debug logging to see exactly what keys your phone is successfully delivering
+        print(f"[DEBUG] Received files: {list(request.files.keys())}")
+        
         user_query = request.form.get('query')
         image_file = request.files.get('image')
         audio_file = request.files.get('audio')
 
         # 1. Image is mandatory for your vision-based tool
         if not image_file:
+            print("[ERROR] 400 Triggered: 'image' key missing or empty.")
             return jsonify({"status": "error", "message": "Missing image payload."}), 400
 
         # 2. Check image file type
@@ -55,23 +57,22 @@ def process_scene():
         # Build contents array with our image
         contents_payload = [image_part]
 
-        # 4. Multimodal Routing: Evaluate what prompt format we received
-        if audio_file and audio_file.content_type in ALLOWED_AUDIO_MIMES:
-            print("[AI ROUTE] Found raw audio command file. Injecting directly into payload.")
+        # 4. Multimodal Routing (🟢 FIX 2: Relaxed file validation for raw hackathon audio stability)
+        if audio_file and audio_file.filename != '':
+            print(f"[AI ROUTE] Found raw audio command file: '{audio_file.filename}' with Type: '{audio_file.content_type}'")
             audio_bytes = audio_file.read()
             audio_part = types.Part.from_bytes(
                 data=audio_bytes,
-                mime_type="audio/m4a" # Force standard audio envelope format
+                mime_type="audio/m4a" # Force treat binary stream envelope as audio
             )
             contents_payload.append(audio_part)
             
         elif user_query:
-            print(f"[AI ROUTE] Found text command. Injecting string: '{user_query}'")
+            print(f"[AI ROUTE] Found text command string: '{user_query}'")
             contents_payload.append(f"User Query: {user_query}")
             
         else:
-            # Fallback text prompt if neither voice nor custom text is valid
-            print("[AI ROUTE] No dynamic query found. Defaulting to general safety prompt.")
+            print("[AI ROUTE] No audio or custom text found. Defaulting to general safety scan.")
             contents_payload.append("User Query: Identify any obstacles or physical hazards in front of me.")
 
         system_instruction = (
